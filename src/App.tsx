@@ -8,9 +8,9 @@ function App() {
   const [geoData, setGeoData] = useState<any>(null);
 
   const aspect = window.innerWidth / window.innerHeight;
-  const latSpan = 0.03;
-  const centerLat = 29.723333;
-  const centerLon = -95.819747;
+  const latSpan = 0.04;
+  const centerLat = 29.716816;
+  const centerLon = -95.844305;
   const lonSpan = (latSpan * aspect) / Math.cos((centerLat * Math.PI) / 180);
 
   const mapBounds = {
@@ -201,7 +201,7 @@ function App() {
   }, [osmData, isLoading]);
 
   useEffect(() => {
-    fetch("/src/routes/tracks.geojson")
+    fetch("/src/routes/route2.geojson")
       .then((res) => res.json())
       .then((data) => {
         setGeoData(data);
