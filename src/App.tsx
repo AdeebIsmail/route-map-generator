@@ -1,225 +1,91 @@
-import { useEffect, useRef, useState } from "react";
+import MapGenerator from "./components/mapGenerator";
 import "./App.css";
+import { useState } from "react";
 
 function App() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [osmData, setOsmData] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [geoData, setGeoData] = useState<any>(null);
+  const [fileContent, setFileContent] = useState("");
+  const [lat, setLat] = useState("");
+  const [lon, setLon] = useState("");
+  const [zoom, setZoom] = useState("");
 
-  const aspect = window.innerWidth / window.innerHeight;
-  const latSpan = 0.04;
-  const centerLat = 29.716816;
-  const centerLon = -95.844305;
-  const lonSpan = (latSpan * aspect) / Math.cos((centerLat * Math.PI) / 180);
+  const handleFormSubmission = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const file = formData.get("file") as File;
 
-  const mapBounds = {
-    minLat: centerLat - latSpan / 2,
-    maxLat: centerLat + latSpan / 2,
-    minLon: centerLon - lonSpan / 2,
-    maxLon: centerLon + lonSpan / 2,
-  };
-
-  const latLonToCanvas = (
-    lat: number,
-    lon: number,
-    canvasWidth: number,
-    canvasHeight: number
-  ) => {
-    const bboxWidth = mapBounds.maxLon - mapBounds.minLon;
-    const bboxHeight = mapBounds.maxLat - mapBounds.minLat;
-
-    const scale = Math.min(canvasWidth / bboxWidth, canvasHeight / bboxHeight);
-    const offsetX = (canvasWidth - bboxWidth * scale) / 2;
-    const offsetY = (canvasHeight - bboxHeight * scale) / 2;
-    const x = (lon - mapBounds.minLon) * scale + offsetX;
-    const y = (mapBounds.maxLat - lat) * scale + offsetY;
-    return { x, y };
-  };
-
-  // Fetch OSM data
-  useEffect(() => {
-    var query = `
-    [out:json][timeout:180];
-
-      (
-        way["building"](${mapBounds.minLat},${mapBounds.minLon},${mapBounds.maxLat},${mapBounds.maxLon});
-
-        way["highway"~"motorway|trunk|primary|secondary|tertiary|residential|unclassified|service|footway|path|pedestrian|cycleway"](
-          ${mapBounds.minLat},${mapBounds.minLon},${mapBounds.maxLat},${mapBounds.maxLon}
-        );
-      );
-
-      // Return geometry for mapping
-      out geom;
-
-  `;
-    async function getOSMData() {
-      try {
-        setIsLoading(true);
-        var result = await fetch("https://overpass-api.de/api/interpreter", {
-          method: "POST",
-          body: "data=" + encodeURIComponent(query),
-        }).then((data) => data.json());
-
-        setOsmData(result);
-      } catch (error) {
-        console.error("Error fetching OSM data:", error);
-      } finally {
-        setIsLoading(false);
-      }
+    if (!file || !file.name) {
+      console.log("No file selected");
+      return;
     }
+    setLat(formData.get("lat") as string);
+    setLon(formData.get("lon") as string);
+    setZoom(formData.get("zoom") as string);
 
-    getOSMData();
-  }, []);
-
-  useEffect(() => {
-    if (!osmData || isLoading) return;
-    const canvas = canvasRef.current;
-    if (canvas) {
-      const dpr = window.devicePixelRatio;
-
-      const width = window.innerWidth;
-      const height = window.innerHeight;
-
-      canvas.width = width * dpr;
-      canvas.height = height * dpr;
-
-      canvas.style.width = `${width}px`;
-      canvas.style.height = `${height}px`;
-
-      const ctx = canvas.getContext("2d", { alpha: false });
-      if (ctx) {
-        ctx.scale(dpr, dpr);
-
-        ctx.imageSmoothingEnabled = false;
-
-        ctx.fillStyle = "#1a1a1a";
-        ctx.fillRect(0, 0, width, height);
-
-        for (let i = 0; i < osmData.elements.length; i++) {
-          const element = osmData.elements[i];
-
-          if (element.tags?.building && element.geometry) {
-            ctx.beginPath();
-            ctx.fillStyle = "#444444";
-            ctx.strokeStyle = "#666666";
-            ctx.lineWidth = 0.5;
-
-            for (let j = 0; j < element.geometry.length; j++) {
-              let lat = element.geometry[j].lat;
-              let lon = element.geometry[j].lon;
-
-              let norm_cords = latLonToCanvas(
-                lat,
-                lon,
-                window.innerWidth,
-                window.innerHeight
-              );
-
-              if (j === 0) {
-                ctx.moveTo(norm_cords.x, norm_cords.y);
-              } else {
-                ctx.lineTo(norm_cords.x, norm_cords.y);
-              }
-            }
-
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-          } else if (element.tags?.highway && element.geometry) {
-            ctx.beginPath();
-            ctx.strokeStyle = "#666666"; // Bright yellow roads
-            ctx.lineWidth = 0.5;
-
-            for (let j = 0; j < element.geometry.length; j++) {
-              let lat = element.geometry[j].lat;
-              let lon = element.geometry[j].lon;
-
-              let norm_cords = latLonToCanvas(
-                lat,
-                lon,
-                window.innerWidth,
-                window.innerHeight
-              );
-
-              if (j === 0) {
-                ctx.moveTo(norm_cords.x, norm_cords.y);
-              } else {
-                ctx.lineTo(norm_cords.x, norm_cords.y);
-              }
-            }
-
-            ctx.stroke();
-          }
-        }
-        ctx.beginPath();
-        ctx.shadowBlur = 20;
-        ctx.shadowColor = "#e98f09ff";
-        ctx.strokeStyle = "#e98f09ff";
-        ctx.lineWidth = 2;
-        for (
-          let i = 0;
-          i < geoData.features[0].geometry.coordinates.length;
-          i++
-        ) {
-          let lat = geoData.features[0].geometry.coordinates[i][1];
-          let lon = geoData.features[0].geometry.coordinates[i][0];
-
-          let norm_cords = latLonToCanvas(
-            lat,
-            lon,
-            window.innerWidth,
-            window.innerHeight
-          );
-          if (i === 0) {
-            ctx.moveTo(norm_cords.x, norm_cords.y);
-          } else {
-            ctx.lineTo(norm_cords.x, norm_cords.y);
-          }
-        }
-        ctx.stroke();
-      }
-    }
-  }, [osmData, geoData, isLoading]);
-
-  useEffect(() => {
-    const handleResize = () => {
-      const canvas = canvasRef.current;
-      if (canvas && osmData && !isLoading) {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
-        const ctx = canvas.getContext("2d");
-        if (ctx) {
-          console.log("Redrawing after resize");
-        }
+    console.log("File selected:", file);
+    const JSONData = new FileReader();
+    JSONData.onload = (e: ProgressEvent<FileReader>) => {
+      const content = e.target?.result;
+      if (content) {
+        setFileContent(content as string);
       }
     };
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [osmData, isLoading]);
-
-  useEffect(() => {
-    fetch("/src/routes/route2.geojson")
-      .then((res) => res.json())
-      .then((data) => {
-        setGeoData(data);
-      });
-  }, []);
-
+    JSONData.readAsText(file);
+  };
   return (
-    <>
-      {isLoading && (
-        <div className="fixed top-4 left-4 bg-white px-4 py-2 rounded shadow">
-          Loading map data...
-        </div>
+    <div className="min-h-screen bg-black">
+      <div className="fixed top-0 left-0 right-0 z-10 bg-black p-6">
+        <form
+          onSubmit={handleFormSubmission}
+          className="flex items-center gap-4"
+        >
+          <input
+            type="file"
+            name="file"
+            className="text-white file:mr-4 file:py-2 file:px-6 file:rounded file:border-0 file:bg-blue-500 file:text-white file:font-semibold hover:file:bg-blue-600 file:cursor-pointer"
+          />
+          <label className="px-4 py-2 text-white">Latitude </label>
+          <input
+            type="text"
+            name="lat"
+            placeholder="Latitude"
+            defaultValue="29.716816"
+            className="px-4 py-2 rounded bg-gray-800 text-white border border-gray-700 focus:outline-none focus:border-blue-500"
+          />
+          <label className="px-4 py-2 text-white">Longitude </label>
+
+          <input
+            type="text"
+            name="lon"
+            placeholder="Longitude"
+            defaultValue="-95.844305"
+            className="px-4 py-2 rounded bg-gray-800 text-white border border-gray-700 focus:outline-none focus:border-blue-500"
+          />
+          <label className="px-4 py-2 text-white">Zoom </label>
+
+          <input
+            type="text"
+            name="zoom"
+            placeholder="Zoom"
+            defaultValue="0.04"
+            className="px-4 py-2 rounded bg-gray-800 text-white border border-gray-700 focus:outline-none focus:border-blue-500"
+          />
+          <button
+            type="submit"
+            className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded transition-colors"
+          >
+            Submit
+          </button>
+        </form>
+      </div>
+      {fileContent && (
+        <MapGenerator
+          geoData={JSON.parse(fileContent)}
+          lat={parseFloat(lat)}
+          lon={parseFloat(lon)}
+          zoom={parseFloat(zoom)}
+        />
       )}
-      <canvas
-        ref={canvasRef}
-        className="fixed top-0 left-0 w-screen h-screen m-0 p-0"
-      ></canvas>
-    </>
+    </div>
   );
 }
 
