@@ -154,8 +154,10 @@ function App() {
           }
         }
         ctx.beginPath();
-        ctx.strokeStyle = "#e98f09ff"; // Bright yellow roads
-        ctx.lineWidth = 0.5;
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = "#e98f09ff";
+        ctx.strokeStyle = "#e98f09ff";
+        ctx.lineWidth = 2;
         for (
           let i = 0;
           i < geoData.features[0].geometry.coordinates.length;
