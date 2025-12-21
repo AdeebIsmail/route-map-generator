@@ -6,6 +6,11 @@ interface MapGeneratorProps {
   lat: number;
   lon: number;
   zoom: number;
+  lineColor: string;
+  buildingColor: string;
+  buildingOutlineColor: string;
+  roadColor: string;
+  backgroundColor: string;
 }
 
 function MapGenerator({
@@ -13,6 +18,11 @@ function MapGenerator({
   lat: externalLat,
   lon: externalLot,
   zoom: externalZoom,
+  lineColor,
+  buildingColor,
+  buildingOutlineColor,
+  roadColor,
+  backgroundColor,
 }: MapGeneratorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [osmData, setOsmData] = useState<any>(null);
@@ -116,7 +126,7 @@ function MapGenerator({
 
         ctx.imageSmoothingEnabled = false;
 
-        ctx.fillStyle = "#1a1a1a";
+        ctx.fillStyle = backgroundColor;
         ctx.fillRect(0, 0, width, height);
 
         for (let i = 0; i < osmData.elements.length; i++) {
@@ -124,8 +134,8 @@ function MapGenerator({
 
           if (element.tags?.building && element.geometry) {
             ctx.beginPath();
-            ctx.fillStyle = "#444444";
-            ctx.strokeStyle = "#666666";
+            ctx.fillStyle = buildingColor;
+            ctx.strokeStyle = buildingOutlineColor;
             ctx.lineWidth = 0.5;
 
             for (let j = 0; j < element.geometry.length; j++) {
@@ -151,7 +161,7 @@ function MapGenerator({
             ctx.stroke();
           } else if (element.tags?.highway && element.geometry) {
             ctx.beginPath();
-            ctx.strokeStyle = "#666666"; // Bright yellow roads
+            ctx.strokeStyle = roadColor;
             ctx.lineWidth = 0.5;
 
             for (let j = 0; j < element.geometry.length; j++) {
@@ -177,8 +187,8 @@ function MapGenerator({
         }
         ctx.beginPath();
         ctx.shadowBlur = 20;
-        ctx.shadowColor = "#e98f09ff";
-        ctx.strokeStyle = "#e98f09ff";
+        ctx.shadowColor = lineColor;
+        ctx.strokeStyle = lineColor;
         ctx.lineWidth = 2;
         for (
           let i = 0;
@@ -226,7 +236,7 @@ function MapGenerator({
 
           ctx.imageSmoothingEnabled = false;
 
-          ctx.fillStyle = "#1a1a1a";
+          ctx.fillStyle = backgroundColor;
           ctx.fillRect(0, 0, width, height);
 
           for (let i = 0; i < osmData.elements.length; i++) {
@@ -234,8 +244,8 @@ function MapGenerator({
 
             if (element.tags?.building && element.geometry) {
               ctx.beginPath();
-              ctx.fillStyle = "#444444";
-              ctx.strokeStyle = "#666666";
+              ctx.fillStyle = buildingColor;
+              ctx.strokeStyle = buildingOutlineColor;
               ctx.lineWidth = 0.5;
 
               for (let j = 0; j < element.geometry.length; j++) {
@@ -261,7 +271,7 @@ function MapGenerator({
               ctx.stroke();
             } else if (element.tags?.highway && element.geometry) {
               ctx.beginPath();
-              ctx.strokeStyle = "#666666"; // Bright yellow roads
+              ctx.strokeStyle = roadColor;
               ctx.lineWidth = 0.5;
 
               for (let j = 0; j < element.geometry.length; j++) {
@@ -287,8 +297,8 @@ function MapGenerator({
           }
           ctx.beginPath();
           ctx.shadowBlur = 20;
-          ctx.shadowColor = "#e98f09ff";
-          ctx.strokeStyle = "#e98f09ff";
+          ctx.shadowColor = lineColor;
+          ctx.strokeStyle = lineColor;
           ctx.lineWidth = 2;
           for (
             let i = 0;
