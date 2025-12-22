@@ -190,24 +190,30 @@ function MapGenerator({
         ctx.shadowColor = lineColor;
         ctx.strokeStyle = lineColor;
         ctx.lineWidth = 2;
-        for (
-          let i = 0;
-          i < geoData.features[0].geometry.coordinates.length;
-          i++
-        ) {
-          let lat = geoData.features[0].geometry.coordinates[i][1];
-          let lon = geoData.features[0].geometry.coordinates[i][0];
+        console.log(geoData);
+        console.log(geoData.features.length);
+        console.log(geoData.features[1]);
 
-          let norm_cords = latLonToCanvas(
-            lat,
-            lon,
-            window.innerWidth,
-            window.innerHeight
-          );
-          if (i === 0) {
-            ctx.moveTo(norm_cords.x, norm_cords.y);
-          } else {
-            ctx.lineTo(norm_cords.x, norm_cords.y);
+        for (let j = 0; j < geoData.features.length; j++) {
+          for (
+            let i = 0;
+            i < geoData.features[j].geometry.coordinates.length;
+            i++
+          ) {
+            let lat = geoData.features[j].geometry.coordinates[i][1];
+            let lon = geoData.features[j].geometry.coordinates[i][0];
+
+            let norm_cords = latLonToCanvas(
+              lat,
+              lon,
+              window.innerWidth,
+              window.innerHeight
+            );
+            if (i === 0) {
+              ctx.moveTo(norm_cords.x, norm_cords.y);
+            } else {
+              ctx.lineTo(norm_cords.x, norm_cords.y);
+            }
           }
         }
         ctx.stroke();

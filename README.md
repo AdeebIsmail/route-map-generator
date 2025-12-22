@@ -2,6 +2,8 @@ I wanted to generate black-and-white maps of the bike routes I take, so I built 
 
 You can generate the routes using a service like [geojson.io](https://www.geojson.io)
 
-![alt text](image.png)
+![alt text](route1.png)
 
-![alt text](image-1.png)
+![alt text](route2.png)
+
+![alt text](route3.png)
