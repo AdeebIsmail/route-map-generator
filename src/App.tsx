@@ -1,6 +1,7 @@
 import MapGenerator from "./components/mapGenerator";
 import "./App.css";
 import { useState } from "react";
+import { gpx } from "@tmcw/togeojson";
 
 function App() {
   const [fileContent, setFileContent] = useState("");
@@ -33,10 +34,21 @@ function App() {
 
     console.log("File selected:", file);
     const JSONData = new FileReader();
+    console.log(file.name);
     JSONData.onload = (e: ProgressEvent<FileReader>) => {
-      const content = e.target?.result;
-      if (content) {
-        setFileContent(content as string);
+      if (file.type == "application/gpx+xml") {
+        const text = e.target?.result as string;
+        const parser = new DOMParser();
+        const xml = parser.parseFromString(text, "application/xml");
+        const geojson = gpx(xml);
+        if (geojson) {
+          setFileContent(JSON.stringify(geojson));
+        }
+      } else {
+        const content = e.target?.result;
+        if (content) {
+          setFileContent(content as string);
+        }
       }
     };
     JSONData.readAsText(file);
