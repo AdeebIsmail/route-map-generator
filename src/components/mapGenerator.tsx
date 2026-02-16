@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import "../App.css";
 
 interface MapGeneratorProps {
+  // this specifies props
   geoData: any;
   lat: number;
   lon: number;
@@ -14,6 +15,7 @@ interface MapGeneratorProps {
 }
 
 function MapGenerator({
+  // geoData and externalGeoData hold the same value
   geoData: externalGeoData,
   lat: externalLat,
   lon: externalLot,
@@ -51,7 +53,7 @@ function MapGenerator({
     lat: number,
     lon: number,
     canvasWidth: number,
-    canvasHeight: number
+    canvasHeight: number,
   ) => {
     const bboxWidth = mapBounds.maxLon - mapBounds.minLon;
     const bboxHeight = mapBounds.maxLat - mapBounds.minLat;
@@ -146,7 +148,7 @@ function MapGenerator({
                 lat,
                 lon,
                 window.innerWidth,
-                window.innerHeight
+                window.innerHeight,
               );
 
               if (j === 0) {
@@ -172,7 +174,7 @@ function MapGenerator({
                 lat,
                 lon,
                 window.innerWidth,
-                window.innerHeight
+                window.innerHeight,
               );
 
               if (j === 0) {
@@ -207,7 +209,7 @@ function MapGenerator({
               lat,
               lon,
               window.innerWidth,
-              window.innerHeight
+              window.innerHeight,
             );
             if (i === 0) {
               ctx.moveTo(norm_cords.x, norm_cords.y);
@@ -220,7 +222,9 @@ function MapGenerator({
       }
     }
   }, [osmData, geoData, isLoading]);
-
+  //return function in useeffect is for cleanup when done
+  //rework
+  //adds event listener, when dep array changes, cleans up and adds listener again
   useEffect(() => {
     const handleResize = () => {
       const canvas = canvasRef.current;
@@ -262,7 +266,7 @@ function MapGenerator({
                   lat,
                   lon,
                   window.innerWidth,
-                  window.innerHeight
+                  window.innerHeight,
                 );
 
                 if (j === 0) {
@@ -288,7 +292,7 @@ function MapGenerator({
                   lat,
                   lon,
                   window.innerWidth,
-                  window.innerHeight
+                  window.innerHeight,
                 );
 
                 if (j === 0) {
@@ -318,7 +322,7 @@ function MapGenerator({
               lat,
               lon,
               window.innerWidth,
-              window.innerHeight
+              window.innerHeight,
             );
             if (i === 0) {
               ctx.moveTo(norm_cords.x, norm_cords.y);
@@ -346,13 +350,18 @@ function MapGenerator({
   return (
     <>
       {isLoading && (
-        <div className="fixed top-20 left-4 bg-blue-500 text-white px-4 py-2 rounded shadow z-20">
-          Loading map data...
+        <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20">
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-2xl shadow-2xl border border-blue-400/30 backdrop-blur-sm">
+            <div className="flex items-center gap-3">
+              <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent"></div>
+              <span className="font-semibold">Loading map data...</span>
+            </div>
+          </div>
         </div>
       )}
       <canvas
         ref={canvasRef}
-        className="fixed top-0 left-0 w-screen h-screen m-0 p-0"
+        // className="fixed top-0 left-0 w-screen h-screen m-0 p-0"
       ></canvas>
     </>
   );
