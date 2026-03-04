@@ -84,39 +84,45 @@ function App() {
   return (
     <div className="min-h-screen ">
       <div className="grid grid-flow-col grid-rows-2 grid-cols-8">
-        <div className="row-start-1  col-span-1 ">
-          <div className=" backdrop-blur-md bg-black/90 border-b border-gray-800 shadow-2xl h-screen">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent text-center">
+        <div className="row-start-1 col-span-1 min-w-0 overflow-hidden">
+          <div className=" backdrop-blur-md bg-black/90 border-b border-gray-800 shadow-2xl h-screen overflow-y-auto overflow-x-hidden">
+            <h1 className="text-[clamp(0.6rem,1.5vw,1.5rem)] font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent text-center">
               🗺️ Route Viewer
             </h1>
-            <div className="flex items-center gap-2 text-xs text-gray-400 justify-center mb-6">
-              <span className="px-2 py-1  rounded">Lat: {lat.toFixed(6)}</span>
-              <span className="px-2 py-1  rounded">Lon: {lon.toFixed(6)}</span>
-              <span className="px-2 py-1 rounded">Zoom: {zoom.toFixed(3)}</span>
+            <div className="flex flex-wrap items-center gap-1 text-[clamp(0.5rem,1vw,0.75rem)] text-gray-400 justify-center mb-6">
+              <span className="px-1 py-0.5 rounded truncate">
+                Lat: {lat.toFixed(6)}
+              </span>
+              <span className="px-1 py-0.5 rounded truncate">
+                Lon: {lon.toFixed(6)}
+              </span>
+              <span className="px-1 py-0.5 rounded truncate">
+                Zoom: {zoom.toFixed(3)}
+              </span>
             </div>
 
             <form
               onSubmit={handleFormSubmission}
-              className="flex flex-col gap-3 px-4 "
+              className="flex flex-col gap-3 px-2 "
             >
               <div className="mb-6">
-                <label className="block text-sm font-semibold text-gray-300 mb-2">
+                <label className="block text-[clamp(0.55rem,1.2vw,0.875rem)] font-semibold text-gray-300 mb-2">
                   📁 Upload Route File
                 </label>
                 <input
                   type="file"
                   name="file"
-                  className="w-full text-white text-xs file:h-8 file:py-1 file:px-4 file:rounded-md file:border-0 file:bg-gradient-to-r file:from-blue-600 file:to-blue-700 file:text-sm file:font-semibold hover:file:from-blue-700 hover:file:to-blue-800 file:cursor-pointer file:transition-all"
+                  className="w-full text-white text-[clamp(0.5rem,1vw,0.75rem)] file:h-7 file:py-1 file:px-2 file:rounded-md file:border-0 file:bg-gradient-to-r file:from-blue-600 file:to-blue-700 file:text-[clamp(0.5rem,1vw,0.875rem)] file:font-semibold hover:file:from-blue-700 hover:file:to-blue-800 file:cursor-pointer file:transition-all"
                 />
               </div>
 
               <div className="">
-                <label className="block text-sm font-semibold text-gray-300 mb-3">
+                <label className="block text-[clamp(0.55rem,1.2vw,0.875rem)] font-semibold text-gray-300 mb-3">
                   🎯 Map Position
                 </label>
                 <div className="grid grid-cols-1 grid-rows-3 md:grid-cols-3 gap-3">
                   <div className="col-span-full">
-                    <label className="block text-xs text-gray-400 mb-1">
+                    <label className="block text-[clamp(0.5rem,1vw,0.75rem)] text-gray-400 mb-1">
                       Latitude
                     </label>
                     <input
@@ -124,12 +130,12 @@ function App() {
                       name="lat"
                       placeholder="Latitude"
                       defaultValue={lat}
-                      className="w-full px-3 py-2 rounded-lg bg-gray-800 text-white border border-gray-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition-all"
+                      className="w-full px-2 py-1 rounded-lg bg-gray-800 text-[clamp(0.5rem,1.2vw,1rem)] text-white border border-gray-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition-all"
                     />
                   </div>
 
                   <div className="col-span-full">
-                    <label className="block text-xs text-gray-400 mb-1">
+                    <label className="block text-[clamp(0.5rem,1vw,0.75rem)] text-gray-400 mb-1">
                       Longitude
                     </label>
                     <input
@@ -137,12 +143,12 @@ function App() {
                       name="lon"
                       placeholder="Longitude"
                       defaultValue={lon}
-                      className="w-full px-3 py-2 rounded-lg bg-gray-800 text-white border border-gray-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition-all"
+                      className="w-full px-2 py-1 rounded-lg bg-gray-800 text-[clamp(0.5rem,1.2vw,1rem)] text-white border border-gray-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition-all"
                     />
                   </div>
 
                   <div className="col-span-full">
-                    <label className="block text-xs text-gray-400 mb-1">
+                    <label className="block text-[clamp(0.5rem,1vw,0.75rem)] text-gray-400 mb-1">
                       Zoom
                     </label>
                     <input
@@ -150,62 +156,62 @@ function App() {
                       name="zoom"
                       placeholder="Zoom"
                       defaultValue={zoom}
-                      className="w-full px-3 py-2 rounded-lg bg-gray-800 text-white border border-gray-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition-all"
+                      className="w-full px-2 py-1 rounded-lg bg-gray-800 text-[clamp(0.5rem,1.2vw,1rem)] text-white border border-gray-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition-all"
                     />
                   </div>
                 </div>
               </div>
               <div className="">
-                <label className="block text-sm font-semibold text-gray-300 mb-3">
+                <label className="block text-[clamp(0.55rem,1.2vw,0.875rem)] font-semibold text-gray-300 mb-3">
                   🧭 Quick Navigation
                 </label>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1">
                   <button
                     onClick={increaseLat}
-                    className="bg-gray-800 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-all border border-gray-700 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 active:scale-95"
+                    className="bg-gray-800 hover:bg-gray-700 text-white font-medium py-1 px-2 rounded-lg transition-all border border-gray-700 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 active:scale-95 text-[clamp(0.5rem,1.2vw,0.875rem)]"
                   >
                     ⬆️ North
                   </button>
                   <button
                     onClick={decreaseLat}
-                    className="bg-gray-800 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-all border border-gray-700 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 active:scale-95"
+                    className="bg-gray-800 hover:bg-gray-700 text-white font-medium py-1 px-2 rounded-lg transition-all border border-gray-700 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 active:scale-95 text-[clamp(0.5rem,1.2vw,0.875rem)]"
                   >
                     ⬇️ South
                   </button>
                   <button
                     onClick={increaseLon}
-                    className="bg-gray-800 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-all border border-gray-700 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 active:scale-95"
+                    className="bg-gray-800 hover:bg-gray-700 text-white font-medium py-1 px-2 rounded-lg transition-all border border-gray-700 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 active:scale-95 text-[clamp(0.5rem,1.2vw,0.875rem)]"
                   >
                     ➡️ East
                   </button>
                   <button
                     onClick={decreaseLon}
-                    className="bg-gray-800 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-all border border-gray-700 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 active:scale-95"
+                    className="bg-gray-800 hover:bg-gray-700 text-white font-medium py-1 px-2 rounded-lg transition-all border border-gray-700 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/20 active:scale-95 text-[clamp(0.5rem,1.2vw,0.875rem)]"
                   >
                     ⬅️ West
                   </button>
                   <div className="w-full md:w-auto h-px md:h-auto md:w-px bg-gray-700"></div>
                   <button
                     onClick={increaseZoom}
-                    className="bg-gray-800 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-all border border-gray-700 hover:border-purple-500 hover:shadow-lg hover:shadow-purple-500/20 active:scale-95"
+                    className="bg-gray-800 hover:bg-gray-700 text-white font-medium py-1 px-2 rounded-lg transition-all border border-gray-700 hover:border-purple-500 hover:shadow-lg hover:shadow-purple-500/20 active:scale-95 text-[clamp(0.5rem,1.2vw,0.875rem)]"
                   >
                     🔍 Zoom In
                   </button>
                   <button
                     onClick={decreaseZoom}
-                    className="bg-gray-800 hover:bg-gray-700 text-white font-medium py-2 px-4 rounded-lg transition-all border border-gray-700 hover:border-purple-500 hover:shadow-lg hover:shadow-purple-500/20 active:scale-95"
+                    className="bg-gray-800 hover:bg-gray-700 text-white font-medium py-1 px-2 rounded-lg transition-all border border-gray-700 hover:border-purple-500 hover:shadow-lg hover:shadow-purple-500/20 active:scale-95 text-[clamp(0.5rem,1.2vw,0.875rem)]"
                   >
                     🔎 Zoom Out
                   </button>
                 </div>
               </div>
               <div className="">
-                <label className="block text-sm font-semibold text-gray-300 mb-3">
+                <label className="block text-[clamp(0.55rem,1.2vw,0.875rem)] font-semibold text-gray-300 mb-3">
                   🎨 Color Scheme
                 </label>
                 <div className="grid grid-flow-col grid-rows-5 grid-cols-1 md:grid-cols-5 gap-3">
                   <div className="col-span-full">
-                    <label className="block text-xs text-gray-400 ">
+                    <label className="block text-[clamp(0.5rem,1vw,0.75rem)] text-gray-400 ">
                       Route Line
                     </label>
                     <input
@@ -217,7 +223,7 @@ function App() {
                   </div>
 
                   <div className="col-span-full  ">
-                    <label className="block text-xs text-gray-400 ">
+                    <label className="block text-[clamp(0.5rem,1vw,0.75rem)] text-gray-400 ">
                       Buildings
                     </label>
                     <input
@@ -229,7 +235,7 @@ function App() {
                   </div>
 
                   <div className="col-span-full">
-                    <label className="block text-xs text-gray-400 ">
+                    <label className="block text-[clamp(0.5rem,1vw,0.75rem)] text-gray-400 ">
                       Outlines
                     </label>
                     <input
@@ -241,7 +247,7 @@ function App() {
                   </div>
 
                   <div className="col-span-full">
-                    <label className="block text-xs text-gray-400 ">
+                    <label className="block text-[clamp(0.5rem,1vw,0.75rem)] text-gray-400 ">
                       Roads
                     </label>
                     <input
@@ -253,7 +259,7 @@ function App() {
                   </div>
 
                   <div className="col-span-full">
-                    <label className="block text-xs text-gray-400 ">
+                    <label className="block text-[clamp(0.5rem,1vw,0.75rem)] text-gray-400 ">
                       Background
                     </label>
                     <input
@@ -268,7 +274,7 @@ function App() {
 
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-3 px-8 rounded-xl transition-all shadow-lg hover:shadow-blue-500/50 hover:scale-[1.02] active:scale-[0.98]"
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-2 px-4 rounded-xl transition-all shadow-lg hover:shadow-blue-500/50 hover:scale-[1.02] active:scale-[0.98] text-[clamp(0.55rem,1.2vw,1rem)]"
               >
                 🚀 Load Map
               </button>
