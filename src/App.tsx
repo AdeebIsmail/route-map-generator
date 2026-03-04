@@ -87,7 +87,7 @@ function App() {
         <div className="row-start-1  col-span-1 ">
           <div className=" backdrop-blur-md bg-black/90 border-b border-gray-800 shadow-2xl h-screen">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent text-center">
-              🗺️ Map Viewer
+              🗺️ Route Viewer
             </h1>
             <div className="flex items-center gap-2 text-xs text-gray-400 justify-center mb-6">
               <span className="px-2 py-1  rounded">Lat: {lat.toFixed(6)}</span>
