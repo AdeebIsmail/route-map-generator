@@ -27,7 +27,9 @@ function MapGenerator({
   backgroundColor,
 }: MapGeneratorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const latestRequestId = useRef(0);
   const [osmData, setOsmData] = useState<any>(null);
+  const [osmBoundsKey, setOsmBoundsKey] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [geoData, setGeoData] = useState<any>(externalGeoData);
 
@@ -48,6 +50,7 @@ function MapGenerator({
     minLon: centerLon - lonSpan / 2,
     maxLon: centerLon + lonSpan / 2,
   };
+  const mapBoundsKey = `${mapBounds.minLat.toFixed(6)}:${mapBounds.minLon.toFixed(6)}:${mapBounds.maxLat.toFixed(6)}:${mapBounds.maxLon.toFixed(6)}`;
 
   const latLonToCanvas = (
     lat: number,
@@ -87,33 +90,62 @@ function MapGenerator({
 
   `;
     async function getOSMData() {
+      const requestId = ++latestRequestId.current;
+
+      const endpoints = [
+        "https://overpass-api.de/api/interpreter",
+        "https://overpass.kumi.systems/api/interpreter",
+      ];
+
       try {
         setIsLoading(true);
-        const response = await fetch(
-          "https://overpass-api.de/api/interpreter",
-          {
-            method: "POST",
-            body: "data=" + encodeURIComponent(query),
-            signal: controller.signal,
-          },
-        );
+        let result: any = null;
+        let lastError: unknown = null;
 
-        if (!response.ok) {
-          throw new Error(
-            `Overpass API error: ${response.status} ${response.statusText}`,
+        for (const endpoint of endpoints) {
+          try {
+            const response = await fetch(endpoint, {
+              method: "POST",
+              body: "data=" + encodeURIComponent(query),
+              signal: controller.signal,
+            });
+
+            if (!response.ok) {
+              throw new Error(
+                `Overpass API error from ${endpoint}: ${response.status} ${response.statusText}`,
+              );
+            }
+
+            result = await response.json();
+            break;
+          } catch (endpointError) {
+            if ((endpointError as Error).name === "AbortError") return;
+            lastError = endpointError;
+          }
+        }
+
+        if (!result) {
+          throw (
+            lastError ??
+            new Error("Failed to fetch OSM data from all endpoints")
           );
         }
 
-        const result = await response.json();
+        // Ignore stale completions from older requests.
+        if (requestId !== latestRequestId.current) return;
+
         setOsmData(result);
+        setOsmBoundsKey(mapBoundsKey);
       } catch (error) {
         if ((error as Error).name === "AbortError") return;
         console.error("Error fetching OSM data:", error);
       } finally {
-        setIsLoading(false);
+        if (requestId === latestRequestId.current) {
+          setIsLoading(false);
+        }
       }
     }
-
+    // Wait 1 second and then fetch data
     const timer = setTimeout(() => {
       getOSMData();
     }, 1000);
@@ -127,13 +159,15 @@ function MapGenerator({
     mapBounds.minLon,
     mapBounds.maxLat,
     mapBounds.maxLon,
+    mapBoundsKey,
     externalZoom,
   ]);
 
   useEffect(() => {
-    if (!osmData || isLoading) return;
+    if (isLoading) return;
     const canvas = canvasRef.current;
     if (canvas) {
+      const shouldDrawOSM = Boolean(osmData);
       const dpr = window.devicePixelRatio;
 
       const width = window.innerWidth;
@@ -154,124 +188,7 @@ function MapGenerator({
         ctx.fillStyle = backgroundColor;
         ctx.fillRect(0, 0, width, height);
 
-        for (let i = 0; i < osmData.elements.length; i++) {
-          const element = osmData.elements[i];
-
-          if (element.tags?.building && element.geometry) {
-            ctx.beginPath();
-            ctx.fillStyle = buildingColor;
-            ctx.strokeStyle = buildingOutlineColor;
-            ctx.lineWidth = 0.5;
-
-            for (let j = 0; j < element.geometry.length; j++) {
-              let lat = element.geometry[j].lat;
-              let lon = element.geometry[j].lon;
-
-              let norm_cords = latLonToCanvas(
-                lat,
-                lon,
-                window.innerWidth,
-                window.innerHeight,
-              );
-
-              if (j === 0) {
-                ctx.moveTo(norm_cords.x, norm_cords.y);
-              } else {
-                ctx.lineTo(norm_cords.x, norm_cords.y);
-              }
-            }
-
-            ctx.closePath();
-            ctx.fill();
-            ctx.stroke();
-          } else if (element.tags?.highway && element.geometry) {
-            ctx.beginPath();
-            ctx.strokeStyle = roadColor;
-            ctx.lineWidth = 0.5;
-
-            for (let j = 0; j < element.geometry.length; j++) {
-              let lat = element.geometry[j].lat;
-              let lon = element.geometry[j].lon;
-
-              let norm_cords = latLonToCanvas(
-                lat,
-                lon,
-                window.innerWidth,
-                window.innerHeight,
-              );
-
-              if (j === 0) {
-                ctx.moveTo(norm_cords.x, norm_cords.y);
-              } else {
-                ctx.lineTo(norm_cords.x, norm_cords.y);
-              }
-            }
-
-            ctx.stroke();
-          }
-        }
-        ctx.beginPath();
-        ctx.shadowBlur = 20;
-        ctx.shadowColor = lineColor;
-        ctx.strokeStyle = lineColor;
-        ctx.lineWidth = 2;
-        console.log(geoData);
-        console.log(geoData.features.length);
-        console.log(geoData.features[1]);
-
-        for (let j = 0; j < geoData.features.length; j++) {
-          for (
-            let i = 0;
-            i < geoData.features[j].geometry.coordinates.length;
-            i++
-          ) {
-            let lat = geoData.features[j].geometry.coordinates[i][1];
-            let lon = geoData.features[j].geometry.coordinates[i][0];
-
-            let norm_cords = latLonToCanvas(
-              lat,
-              lon,
-              window.innerWidth,
-              window.innerHeight,
-            );
-            if (i === 0) {
-              ctx.moveTo(norm_cords.x, norm_cords.y);
-            } else {
-              ctx.lineTo(norm_cords.x, norm_cords.y);
-            }
-          }
-        }
-        ctx.stroke();
-      }
-    }
-  }, [osmData, geoData, isLoading]);
-  //return function in useeffect is for cleanup when done
-  //rework
-  //adds event listener, when dep array changes, cleans up and adds listener again
-  useEffect(() => {
-    const handleResize = () => {
-      const canvas = canvasRef.current;
-      if (canvas && osmData && !isLoading) {
-        const dpr = window.devicePixelRatio;
-
-        const width = window.innerWidth;
-        const height = window.innerHeight;
-
-        canvas.width = width * dpr;
-        canvas.height = height * dpr;
-
-        canvas.style.width = `${width}px`;
-        canvas.style.height = `${height}px`;
-
-        const ctx = canvas.getContext("2d", { alpha: false });
-        if (ctx) {
-          ctx.scale(dpr, dpr);
-
-          ctx.imageSmoothingEnabled = false;
-
-          ctx.fillStyle = backgroundColor;
-          ctx.fillRect(0, 0, width, height);
-
+        if (shouldDrawOSM) {
           for (let i = 0; i < osmData.elements.length; i++) {
             const element = osmData.elements[i];
 
@@ -328,6 +245,128 @@ function MapGenerator({
               ctx.stroke();
             }
           }
+        }
+        ctx.beginPath();
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = lineColor;
+        ctx.strokeStyle = lineColor;
+        ctx.lineWidth = 2;
+        console.log(geoData);
+        console.log(geoData.features.length);
+        console.log(geoData.features[1]);
+
+        for (let j = 0; j < geoData.features.length; j++) {
+          for (
+            let i = 0;
+            i < geoData.features[j].geometry.coordinates.length;
+            i++
+          ) {
+            let lat = geoData.features[j].geometry.coordinates[i][1];
+            let lon = geoData.features[j].geometry.coordinates[i][0];
+
+            let norm_cords = latLonToCanvas(
+              lat,
+              lon,
+              window.innerWidth,
+              window.innerHeight,
+            );
+            if (i === 0) {
+              ctx.moveTo(norm_cords.x, norm_cords.y);
+            } else {
+              ctx.lineTo(norm_cords.x, norm_cords.y);
+            }
+          }
+        }
+        ctx.stroke();
+      }
+    }
+  }, [osmData, osmBoundsKey, mapBoundsKey, geoData, isLoading]);
+  //return function in useeffect is for cleanup when done
+  //rework
+  //adds event listener, when dep array changes, cleans up and adds listener again
+  useEffect(() => {
+    const handleResize = () => {
+      const canvas = canvasRef.current;
+      if (canvas && !isLoading) {
+        const shouldDrawOSM = Boolean(osmData);
+        const dpr = window.devicePixelRatio;
+
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+
+        canvas.style.width = `${width}px`;
+        canvas.style.height = `${height}px`;
+
+        const ctx = canvas.getContext("2d", { alpha: false });
+        if (ctx) {
+          ctx.scale(dpr, dpr);
+
+          ctx.imageSmoothingEnabled = false;
+
+          ctx.fillStyle = backgroundColor;
+          ctx.fillRect(0, 0, width, height);
+
+          if (shouldDrawOSM) {
+            for (let i = 0; i < osmData.elements.length; i++) {
+              const element = osmData.elements[i];
+
+              if (element.tags?.building && element.geometry) {
+                ctx.beginPath();
+                ctx.fillStyle = buildingColor;
+                ctx.strokeStyle = buildingOutlineColor;
+                ctx.lineWidth = 0.5;
+
+                for (let j = 0; j < element.geometry.length; j++) {
+                  let lat = element.geometry[j].lat;
+                  let lon = element.geometry[j].lon;
+
+                  let norm_cords = latLonToCanvas(
+                    lat,
+                    lon,
+                    window.innerWidth,
+                    window.innerHeight,
+                  );
+
+                  if (j === 0) {
+                    ctx.moveTo(norm_cords.x, norm_cords.y);
+                  } else {
+                    ctx.lineTo(norm_cords.x, norm_cords.y);
+                  }
+                }
+
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+              } else if (element.tags?.highway && element.geometry) {
+                ctx.beginPath();
+                ctx.strokeStyle = roadColor;
+                ctx.lineWidth = 0.5;
+
+                for (let j = 0; j < element.geometry.length; j++) {
+                  let lat = element.geometry[j].lat;
+                  let lon = element.geometry[j].lon;
+
+                  let norm_cords = latLonToCanvas(
+                    lat,
+                    lon,
+                    window.innerWidth,
+                    window.innerHeight,
+                  );
+
+                  if (j === 0) {
+                    ctx.moveTo(norm_cords.x, norm_cords.y);
+                  } else {
+                    ctx.lineTo(norm_cords.x, norm_cords.y);
+                  }
+                }
+
+                ctx.stroke();
+              }
+            }
+          }
           ctx.beginPath();
           ctx.shadowBlur = 20;
           ctx.shadowColor = lineColor;
@@ -360,7 +399,7 @@ function MapGenerator({
 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, [osmData, geoData, isLoading]);
+  }, [osmData, osmBoundsKey, mapBoundsKey, geoData, isLoading]);
 
   // useEffect(() => {
   //   fetch("/src/routes/route2.geojson")
