@@ -67,6 +67,10 @@ function MapGenerator({
   };
 
   useEffect(() => {
+    console.log(mapBounds);
+
+    const controller = new AbortController();
+
     var query = `
     [out:json][timeout:180];
 
@@ -85,20 +89,39 @@ function MapGenerator({
     async function getOSMData() {
       try {
         setIsLoading(true);
-        var result = await fetch("https://overpass-api.de/api/interpreter", {
-          method: "POST",
-          body: "data=" + encodeURIComponent(query),
-        }).then((data) => data.json());
+        const response = await fetch(
+          "https://overpass-api.de/api/interpreter",
+          {
+            method: "POST",
+            body: "data=" + encodeURIComponent(query),
+            signal: controller.signal,
+          },
+        );
 
+        if (!response.ok) {
+          throw new Error(
+            `Overpass API error: ${response.status} ${response.statusText}`,
+          );
+        }
+
+        const result = await response.json();
         setOsmData(result);
       } catch (error) {
+        if ((error as Error).name === "AbortError") return;
         console.error("Error fetching OSM data:", error);
       } finally {
         setIsLoading(false);
       }
     }
 
-    getOSMData();
+    const timer = setTimeout(() => {
+      getOSMData();
+    }, 1000);
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, [
     mapBounds.minLat,
     mapBounds.minLon,

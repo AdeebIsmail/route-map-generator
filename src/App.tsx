@@ -43,6 +43,33 @@ function App() {
         const geojson = gpx(xml);
         if (geojson) {
           setFileContent(JSON.stringify(geojson));
+          console.log(geojson);
+          const geometry = geojson.features[0].geometry;
+
+          if (geometry.type === "LineString") {
+            const coords = geometry.coordinates;
+            let minLat = Infinity;
+            let maxLat = -Infinity;
+            let minLon = Infinity;
+            let maxLon = -Infinity;
+
+            coords.forEach((cord: number[]) => {
+              const lon = cord[0];
+              const lat = cord[1];
+
+              minLat = Math.min(minLat, lat);
+              maxLat = Math.max(maxLat, lat);
+              minLon = Math.min(minLon, lon);
+              maxLon = Math.max(maxLon, lon);
+            });
+
+            const center = [(minLon + maxLon) / 2, (minLat + maxLat) / 2];
+
+            setLon(center[0]);
+            setLat(center[1]);
+
+            console.log(center);
+          }
         }
       } else {
         const content = e.target?.result;
@@ -81,6 +108,18 @@ function App() {
     e.preventDefault();
     setZoom(zoom + 0.01);
   };
+
+  const changeLat = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLat(parseFloat(e.target.value));
+  };
+  const changeLon = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLon(parseFloat(e.target.value));
+  };
+
+  const changeZoom = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setZoom(parseFloat(e.target.value));
+  };
+
   return (
     <div className="min-h-screen ">
       <div className="grid grid-flow-col grid-rows-2 grid-cols-8">
@@ -128,8 +167,9 @@ function App() {
                     <input
                       type="text"
                       name="lat"
+                      value={lat}
+                      onChange={changeLat}
                       placeholder="Latitude"
-                      defaultValue={lat}
                       className="w-full px-2 py-1 rounded-lg bg-gray-800 text-[clamp(0.5rem,1.2vw,1rem)] text-white border border-gray-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition-all"
                     />
                   </div>
@@ -142,7 +182,8 @@ function App() {
                       type="text"
                       name="lon"
                       placeholder="Longitude"
-                      defaultValue={lon}
+                      value={lon}
+                      onChange={changeLon}
                       className="w-full px-2 py-1 rounded-lg bg-gray-800 text-[clamp(0.5rem,1.2vw,1rem)] text-white border border-gray-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition-all"
                     />
                   </div>
@@ -155,7 +196,8 @@ function App() {
                       type="text"
                       name="zoom"
                       placeholder="Zoom"
-                      defaultValue={zoom}
+                      value={zoom}
+                      onChange={changeZoom}
                       className="w-full px-2 py-1 rounded-lg bg-gray-800 text-[clamp(0.5rem,1.2vw,1rem)] text-white border border-gray-700 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition-all"
                     />
                   </div>
