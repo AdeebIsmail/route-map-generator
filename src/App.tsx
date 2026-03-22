@@ -125,7 +125,7 @@ function App() {
       <div className="grid grid-flow-col grid-rows-2 grid-cols-8">
         <div className="row-start-1 col-span-1 min-w-0 overflow-hidden">
           <div className=" backdrop-blur-md bg-black/90 border-b border-gray-800 shadow-2xl h-screen overflow-y-auto overflow-x-hidden">
-            <h1 className="text-[clamp(0.6rem,1.5vw,1.5rem)] font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent text-center">
+            <h1 className="  text-[clamp(0.6rem,1.5vw,1.5rem)] font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent text-center">
               🗺️ Route Viewer
             </h1>
             <div className="flex flex-wrap items-center gap-1 text-[clamp(0.5rem,1vw,0.75rem)] text-gray-400 justify-center mb-6">
