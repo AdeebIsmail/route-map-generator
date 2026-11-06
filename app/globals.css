@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), sans-serif;
+}
+
+.form-input {
+  width: 100%;
+  border: 1px solid #d3ddd3;
+  border-radius: 0.75rem;
+  background: #ffffff;
+  padding: 0.8rem 0.9rem;
+  font-size: 0.875rem;
+  color: #17211b;
+  outline: none;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+@media (prefers-color-scheme: dark) {
+  .form-input {
+    border-color: #3d5145;
+    background: #243029;
+    color: #edf3ee;
+  }
+
+  .form-input::placeholder {
+    color: #8fa394;
+  }
+
+  .form-input:focus {
+    border-color: #8bd0af;
+    box-shadow: 0 0 0 3px rgba(139, 208, 175, 0.16);
+  }
+}
+
+.form-input::placeholder {
+  color: #a0aca3;
+}
+
+.form-input:focus {
+  border-color: #1f6b52;
+  box-shadow: 0 0 0 3px rgba(31, 107, 82, 0.12);
+}
