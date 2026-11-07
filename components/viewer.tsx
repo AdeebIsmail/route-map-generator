@@ -38,7 +38,20 @@ type MapData = {
   elements?: MapElement[];
 };
 
-const boundingBox = (route: RouteData): BoundingBox => {
+function isMapData(value: unknown): value is MapData {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    Array.isArray((value as MapData).elements)
+  );
+}
+
+const boundingBox = (
+  route: RouteData,
+  zoom: number,
+  shiftLat: number,
+  shiftLon: number,
+): BoundingBox => {
   let minlon = Infinity;
   let maxlon = -Infinity;
 
@@ -48,13 +61,27 @@ const boundingBox = (route: RouteData): BoundingBox => {
   for (let i = 0; i < route.coordinates.length; i++) {
     const [lon, lat] = route.coordinates[i];
 
-    minlon = Math.min(minlon, lon);
-    minlat = Math.min(minlat, lat);
-    maxlon = Math.max(maxlon, lon);
-    maxlat = Math.max(maxlat, lat);
+    minlon = Math.min(minlon, lon + shiftLon);
+    minlat = Math.min(minlat, lat + shiftLat);
+    maxlon = Math.max(maxlon, lon + shiftLon);
+    maxlat = Math.max(maxlat, lat + shiftLat);
   }
 
-  return { minlon, minlat, maxlon, maxlat };
+  if (!route.coordinates.length) {
+    return { minlon: 0, minlat: 0, maxlon: 0, maxlat: 0 };
+  }
+
+  const centerLon = (minlon + maxlon) / 2;
+  const centerLat = (minlat + maxlat) / 2; // center of bounding box
+  const zoomLevel = Math.max(-20, Number.isFinite(zoom) ? zoom : 1);
+  const boundsScale = 1 / 2 ** (zoomLevel - 1);
+
+  return {
+    minlon: boundsScale * (minlon - centerLon) + centerLon,
+    minlat: boundsScale * (minlat - centerLat) + centerLat,
+    maxlon: boundsScale * (maxlon - centerLon) + centerLon,
+    maxlat: boundsScale * (maxlat - centerLat) + centerLat,
+  };
 };
 
 const renderCanvas = (
@@ -81,12 +108,12 @@ const renderCanvas = (
 
   const bboxWidth = mapBounds.maxlon - mapBounds.minlon || 1;
   const bboxHeight = mapBounds.maxlat - mapBounds.minlat || 1;
-  const scale = Math.min(width / bboxWidth, height / bboxHeight) * 0.9;
-  const offsetX = (width - bboxWidth * scale) / 2;
-  const offsetY = (height - bboxHeight * scale) / 2;
+  const scale = Math.min(width / bboxWidth, height / bboxHeight) * 0.9; // conversion factor, geographic to pixels
+  const centerLon = (mapBounds.minlon + mapBounds.maxlon) / 2;
+  const centerLat = (mapBounds.minlat + mapBounds.maxlat) / 2;
   const toCanvas = ([lon, lat]: Coordinate) => ({
-    x: (lon - mapBounds.minlon) * scale + offsetX,
-    y: (mapBounds.maxlat - lat) * scale + offsetY,
+    x: scale * (lon - centerLon) + width / 2, // scale relative to the center
+    y: scale * (centerLat - lat) + height / 2,
   });
 
   for (const element of mapData?.elements ?? []) {
@@ -126,54 +153,102 @@ const renderCanvas = (
   ctx.shadowBlur = 0;
 };
 
-function Viewer(map: MapGeneratorProps) {
+export default function Viewer(map: MapGeneratorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const mapCache = useRef(new Map<string, MapData>());
   const [mapData, setMapData] = useState<MapData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const mapBounds = boundingBox(map.routeData);
+  const [error, setError] = useState<unknown>(null);
+
+  const mapBounds = boundingBox(map.routeData, map.zoom, map.lat, map.lon);
 
   useEffect(() => {
     if (!map.routeData.coordinates.length) return;
 
     const controller = new AbortController();
+    const cacheKey = [
+      mapBounds.minlon,
+      mapBounds.minlat,
+      mapBounds.maxlon,
+      mapBounds.maxlat,
+    ].join(":");
+    const cachedData = mapCache.current.get(cacheKey);
+
+    if (cachedData) {
+      setMapData(cachedData);
+      setIsLoading(false);
+      return () => controller.abort();
+    }
+
+    setMapData(null);
     setIsLoading(true);
+    const requestTimer = window.setTimeout(() => {
+      axios
+        .post("/api/map-data", mapBounds, {
+          signal: controller.signal,
+        })
+        .then((response) => {
+          if (!isMapData(response.data)) {
+            throw new Error("Overpass returned an invalid map response.");
+          }
 
-    axios
-      .post("/api/map-data", mapBounds, {
-        signal: controller.signal,
-      })
-      .then((response) => {
-        setMapData(response.data);
-        setIsLoading(false);
-      })
-      .catch((error: unknown) => {
-        if (!axios.isCancel(error)) {
-          console.error("Unable to load map data:", error);
+          mapCache.current.set(cacheKey, response.data);
+          setMapData(response.data);
           setIsLoading(false);
-        }
-      });
+        })
+        .catch((error: unknown) => {
+          if (!axios.isCancel(error)) {
+            console.error("Unable to load map data:", error);
+            setError(error);
+            setIsLoading(false);
+          }
+        });
+    }, 300);
 
-    return () => controller.abort();
-  }, [mapBounds.minlon, mapBounds.minlat, mapBounds.maxlon, mapBounds.maxlat]);
+    return () => {
+      window.clearTimeout(requestTimer);
+      controller.abort();
+    };
+  }, [
+    map.lat,
+    map.lon,
+    map.zoom,
+    mapBounds.minlon,
+    mapBounds.minlat,
+    mapBounds.maxlon,
+    mapBounds.maxlat,
+  ]);
 
   useEffect(() => {
     renderCanvas(canvasRef, map, mapBounds, mapData);
-
+    console.log("RENDER");
+    console.log(mapBounds);
     const handleResize = () => renderCanvas(canvasRef, map, mapBounds, mapData);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
-  }, [mapData]);
+  }, [
+    mapData,
+    map.lat,
+    map.lon,
+    map.zoom,
+    map.routeData,
+    map.lineColor,
+    map.buildingColor,
+    map.buildingOutlineColor,
+    map.roadColor,
+    map.backgroundColor,
+  ]);
 
   return (
     <>
-      <canvas ref={canvasRef} className="h-full w-full"></canvas>
+      <canvas ref={canvasRef} className="block h-full w-full"></canvas>
       {isLoading && (
         <div
-          className="absolute inset-0 grid place-items-center bg-[#18221d]/70 text-white"
+          className="absolute inset-0 grid place-items-center bg-black/70 text-white"
           role="status"
           aria-live="polite"
         >
-          <div className="flex items-center gap-3 rounded-lg bg-[#17211b]/80 px-4 py-3 text-sm font-semibold shadow-lg">
+          <div className="flex items-center gap-3 rounded-lg bg-black/10 px-4 py-3 text-sm font-semibold shadow-lg">
             <span
               className="size-5 animate-spin rounded-full border-2 border-white/30 border-t-white"
               aria-hidden="true"
@@ -182,8 +257,23 @@ function Viewer(map: MapGeneratorProps) {
           </div>
         </div>
       )}
+      {error && (
+        <div
+          className="absolute inset-0 grid place-items-center bg-black/70 text-white"
+          role="alert"
+          aria-live="assertive"
+        >
+          <div className="flex items-center gap-3 rounded-lg bg-black/10 px-4 py-3 text-sm font-semibold shadow-lg">
+            <span
+              className="size-5 animate-spin rounded-full border-2 border-white/30 border-t-white"
+              aria-hidden="true"
+            />
+            {error instanceof Error
+              ? error.message
+              : "An unknown error occurred"}
+          </div>
+        </div>
+      )}
     </>
   );
 }
-
-export default Viewer;

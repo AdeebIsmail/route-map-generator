@@ -49,10 +49,10 @@ export async function POST(request: Request) {
       out geom;
     `;
 
+    const apiKey = process.env.NEXTGIS_API_KEY;
     console.log("request");
-
     const response = await axios.post(
-      "https://overpass-api.de/api/interpreter",
+      "https://overpass.nextgis.com/" + apiKey + "/api/interpreter",
       `data=${encodeURIComponent(query)}`,
       {
         headers: {
@@ -68,7 +68,7 @@ export async function POST(request: Request) {
     const message = axios.isAxiosError(error)
       ? error.message
       : "Unable to load map data.";
-
+    console.log(message);
     return Response.json({ error: message }, { status: 502 });
   }
 }
