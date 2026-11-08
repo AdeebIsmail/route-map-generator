@@ -150,7 +150,7 @@ export default function Home() {
       <section className="w-full max-w-md border-r border-gray-800 bg-gray-950 px-6 py-4 sm:px-10 lg:min-h-screen lg:px-14 lg:py-6">
         <div className="mb-8 max-w-sm">
           <p className="mb-3 text-xs font-bold uppercase tracking-[0.2em] text-[#e2764c]">
-            Route Viewer
+            Route Visualizer
           </p>
           <h1 className="text-4xl font-semibold leading-[1.05] tracking-[-0.04em] text-[#f1f7f2]">
             Draw your route.
