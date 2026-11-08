@@ -193,7 +193,7 @@ export default function Home() {
               id="map-file"
               name="file"
               type="file"
-              accept=".gpx,application/gpx+xml,application/xml,text/xml"
+              accept=".gpx"
               className="sr-only"
               onChange={handleFileChange}
             />
