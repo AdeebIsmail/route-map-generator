@@ -38,13 +38,13 @@ type MapData = {
   elements?: MapElement[];
 };
 
-function isMapData(value: unknown): value is MapData {
+const isMapData = (value: unknown): boolean => {
   return (
     typeof value === "object" &&
     value !== null &&
     Array.isArray((value as MapData).elements)
   );
-}
+};
 
 const boundingBox = (
   route: RouteData,
@@ -89,13 +89,14 @@ const renderCanvas = (
   map: MapGeneratorProps,
   mapBounds: BoundingBox,
   mapData: MapData | null,
+  resolutionScale = 1,
 ): void => {
   const canvas = canvasRef.current;
   if (!canvas || !map.routeData.coordinates.length) return;
 
   const width = canvas.clientWidth;
   const height = canvas.clientHeight;
-  const dpr = window.devicePixelRatio;
+  const dpr = window.devicePixelRatio * resolutionScale;
   canvas.width = width * dpr;
   canvas.height = height * dpr;
 
@@ -151,6 +152,48 @@ const renderCanvas = (
   });
   ctx.stroke();
   ctx.shadowBlur = 0;
+};
+
+const downloadImage = (
+  map: MapGeneratorProps,
+  mapBounds: BoundingBox,
+  mapData: MapData | null,
+): void => {
+  const canvas = document.getElementsByTagName(
+    "canvas",
+  )[0] as HTMLCanvasElement;
+
+  if (!canvas) return;
+
+  const originalCanvas = canvas;
+  if (!originalCanvas) return;
+
+  const scale = 4;
+
+  const exportCanvas = document.createElement("canvas");
+
+  const exportCanvasRef: RefObject<HTMLCanvasElement | null> = {
+    current: exportCanvas,
+  };
+
+  exportCanvas.style.width = `${originalCanvas.clientWidth}px`;
+  exportCanvas.style.height = `${originalCanvas.clientHeight}px`;
+
+  Object.assign(exportCanvas.style, {
+    position: "absolute",
+    visibility: "hidden",
+  });
+
+  document.body.appendChild(exportCanvas);
+
+  renderCanvas(exportCanvasRef, map, mapBounds, mapData, scale);
+
+  const link = document.createElement("a");
+  link.download = "map.png";
+  link.href = exportCanvas.toDataURL("image/png");
+  link.click();
+
+  exportCanvas.remove();
 };
 
 export default function Viewer(map: MapGeneratorProps) {
@@ -241,6 +284,12 @@ export default function Viewer(map: MapGeneratorProps) {
 
   return (
     <>
+      <button
+        onClick={() => downloadImage(map, mapBounds, mapData)}
+        className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-gray-700 bg-gray-900 px-5 py-3.5 text-sm font-bold text-white transition hover:border-gray-500 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[#e2764c] focus:ring-offset-2 focus:ring-offset-gray-950"
+      >
+        Download Map
+      </button>
       <canvas ref={canvasRef} className="block h-full w-full"></canvas>
       {isLoading && (
         <div

@@ -1,8 +1,8 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useState } from "react";
+import { ChangeEvent, FormEvent, useState, type RefObject } from "react";
 import Viewer from "@/components/viewer";
-
+//
 type Coordinate = [number, number];
 
 type RouteData = {
@@ -15,37 +15,42 @@ const emptyRoute: RouteData = {
   coordinates: [],
 };
 
-function toCoordinate(point: Element): [number, number] | null {
+const toCoordinate = (point: Element): [number, number] | null => {
   const lat = Number(point.getAttribute("lat"));
   const lon = Number(point.getAttribute("lon"));
+
   return Number.isFinite(lat) && Number.isFinite(lon) ? [lon, lat] : null;
-}
+};
 
-function isCoordinate(
+const isCoordinate = (
   coordinate: [number, number] | null,
-): coordinate is [number, number] {
+): coordinate is [number, number] => {
   return coordinate !== null;
-}
+};
 
-async function parseGpxFile(file: File): Promise<RouteData> {
+const parseGpxFile = async (file: File): Promise<RouteData> => {
   const xml = new DOMParser().parseFromString(
     await file.text(),
     "application/xml",
   );
+
   const parserError = xml.querySelector("parsererror");
   if (parserError) throw new Error("This is not valid XML.");
 
   const segments = Array.from(xml.querySelectorAll("trkseg"))
     .map((segment) => Array.from(segment.querySelectorAll("trkpt")))
     .map((points) => points.map(toCoordinate).filter(isCoordinate));
+
   const routePoints = Array.from(xml.querySelectorAll("rtept"))
     .map(toCoordinate)
     .filter(isCoordinate);
+
   const coordinates = segments.length
     ? segments.filter((segment) => segment.length > 1)
     : routePoints.length > 1
       ? [routePoints]
       : [];
+
   const routeCoordinates = coordinates.flat();
 
   if (!routeCoordinates.length) {
@@ -56,9 +61,9 @@ async function parseGpxFile(file: File): Promise<RouteData> {
     type: "FeatureCollection",
     coordinates: routeCoordinates,
   };
-}
+};
 
-function ColorControl({
+const ColorControl = ({
   label,
   value,
   onChange,
@@ -66,7 +71,7 @@ function ColorControl({
   label: string;
   value: string;
   onChange: (value: string) => void;
-}) {
+}) => {
   return (
     <label className="flex items-center justify-between rounded-lg border border-gray-700 bg-gray-900 px-3 py-2 text-xs font-medium text-gray-200 transition hover:border-gray-500 hover:bg-gray-800">
       {label}
@@ -79,9 +84,9 @@ function ColorControl({
       />
     </label>
   );
-}
+};
 
-function DirectionControl({
+const DirectionControl = ({
   direction,
   icon,
   onChange,
@@ -89,7 +94,7 @@ function DirectionControl({
   direction: string;
   icon: string;
   onChange: () => void;
-}) {
+}) => {
   return (
     <button
       type="button"
@@ -100,8 +105,7 @@ function DirectionControl({
       {direction}
     </button>
   );
-}
-
+};
 export default function Home() {
   const [fileName, setFileName] = useState("");
   const [routeData, setRouteData] = useState<RouteData>(emptyRoute);
@@ -160,7 +164,6 @@ export default function Home() {
             took.
           </p>
         </div>
-
         <form className="space-y-6" onSubmit={handleSubmit}>
           <div>
             <label
@@ -283,7 +286,6 @@ export default function Home() {
               </div>
             </fieldset>
           </div>
-
           <button
             type="submit"
             className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-700 bg-gray-900 px-5 py-3.5 text-sm font-bold text-white transition hover:border-gray-500 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[#e2764c] focus:ring-offset-2 focus:ring-offset-gray-950"
@@ -291,6 +293,7 @@ export default function Home() {
             Load Map
             <span aria-hidden="true">&#8594;</span>
           </button>
+
           {submitted && (
             <p
               role="status"
