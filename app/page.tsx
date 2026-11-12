@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useState, type RefObject } from "react";
+import { ChangeEvent, FormEvent, useState, useCallback } from "react";
 import Viewer from "@/components/viewer";
 //
 type Coordinate = [number, number];
@@ -106,6 +106,7 @@ const DirectionControl = ({
     </button>
   );
 };
+
 export default function Home() {
   const [fileName, setFileName] = useState("");
   const [routeData, setRouteData] = useState<RouteData>(emptyRoute);
@@ -115,11 +116,17 @@ export default function Home() {
   const [longitude, setLongitude] = useState(0);
   const [zoom, setZoom] = useState(1);
 
+  const [downloadMap, setDownloadMap] = useState<(() => void) | null>(null);
+
   const [routeLine, setRouteLine] = useState("#e2764c");
   const [buildingColor, setBuildingColor] = useState("#b8cdbb");
   const [outlineColor, setOutlineColor] = useState("#9fb5a4");
   const [roadColor, setRoadColor] = useState("#ffffff");
   const [backgroundColor, setBackgroundColor] = useState("#030712");
+
+  const handleDownloadReady = useCallback((download: () => void) => {
+    setDownloadMap(() => download);
+  }, []);
 
   async function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -303,6 +310,13 @@ export default function Home() {
             </p>
           )}
         </form>
+        <button
+          onClick={downloadMap ?? undefined}
+          disabled={!downloadMap}
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-700 bg-gray-900 px-5 py-3.5 text-sm font-bold text-white transition hover:border-gray-500 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[#e2764c] focus:ring-offset-2 focus:ring-offset-gray-950"
+        >
+          Download Map
+        </button>
       </section>
 
       <section className="relative h-[70vh] min-h-[440px] flex-1 overflow-hidden bg-gray-950 lg:h-screen lg:min-h-0">
@@ -317,6 +331,7 @@ export default function Home() {
             buildingOutlineColor={outlineColor}
             roadColor={roadColor}
             backgroundColor={backgroundColor}
+            onDownloadReady={handleDownloadReady}
           />
         )}
       </section>
