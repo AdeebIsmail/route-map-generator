@@ -298,7 +298,7 @@ export default function Home() {
             className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-700 bg-gray-900 px-5 py-3.5 text-sm font-bold text-white transition hover:border-gray-500 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[#e2764c] focus:ring-offset-2 focus:ring-offset-gray-950"
           >
             Load Map
-            <span aria-hidden="true">&#8594;</span>
+            <span aria-hidden="true">&#8680;</span>
           </button>
 
           {submitted && (
@@ -313,9 +313,10 @@ export default function Home() {
         <button
           onClick={downloadMap ?? undefined}
           disabled={!downloadMap}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-gray-700 bg-gray-900 px-5 py-3.5 text-sm font-bold text-white transition hover:border-gray-500 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[#e2764c] focus:ring-offset-2 focus:ring-offset-gray-950"
+          className="flex mt-4 w-full items-center justify-center gap-2 rounded-xl border border-gray-700 bg-gray-900 px-5 py-3.5 text-sm font-bold text-white transition hover:border-gray-500 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[#e2764c] focus:ring-offset-2 focus:ring-offset-gray-950"
         >
           Download Map
+          <span aria-hidden="true">&#8681;</span>
         </button>
       </section>
 

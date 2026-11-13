@@ -295,7 +295,14 @@ export default function Viewer({ onDownloadReady, ...map }: ViewerProps) {
 
   useEffect(() => {
     if (!mapData) return;
+    /*
 
+    const handleDownloadReady = useCallback((download: () => void) => {
+        setDownloadMap(() => download);
+      }, []);
+
+    */
+    // store a function
     onDownloadReady?.(() => {
       downloadImage(map, mapBounds, mapData);
     });
