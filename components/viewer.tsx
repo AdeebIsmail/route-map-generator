@@ -12,6 +12,10 @@ interface MapGeneratorProps {
   backgroundColor: string;
 }
 
+interface ViewerProps extends MapGeneratorProps {
+  onDownloadReady?: (download: () => void) => void;
+}
+
 type Coordinate = [number, number];
 
 type RouteData = {
@@ -38,13 +42,13 @@ type MapData = {
   elements?: MapElement[];
 };
 
-function isMapData(value: unknown): value is MapData {
+const isMapData = (value: unknown): boolean => {
   return (
     typeof value === "object" &&
     value !== null &&
     Array.isArray((value as MapData).elements)
   );
-}
+};
 
 const boundingBox = (
   route: RouteData,
@@ -89,13 +93,14 @@ const renderCanvas = (
   map: MapGeneratorProps,
   mapBounds: BoundingBox,
   mapData: MapData | null,
+  resolutionScale = 1,
 ): void => {
   const canvas = canvasRef.current;
   if (!canvas || !map.routeData.coordinates.length) return;
 
   const width = canvas.clientWidth;
   const height = canvas.clientHeight;
-  const dpr = window.devicePixelRatio;
+  const dpr = window.devicePixelRatio * resolutionScale;
   canvas.width = width * dpr;
   canvas.height = height * dpr;
 
@@ -111,6 +116,13 @@ const renderCanvas = (
   const scale = Math.min(width / bboxWidth, height / bboxHeight) * 0.9; // conversion factor, geographic to pixels
   const centerLon = (mapBounds.minlon + mapBounds.maxlon) / 2;
   const centerLat = (mapBounds.minlat + mapBounds.maxlat) / 2;
+
+  /*
+  lon - centerLon, find how far away the coord is from the center
+  scale * (...), convert from geographic to pixels, gives how many pixels away from the center
+  + width / 2, calculates the center, perform offset from the center
+  */
+
   const toCanvas = ([lon, lat]: Coordinate) => ({
     x: scale * (lon - centerLon) + width / 2, // scale relative to the center
     y: scale * (centerLat - lat) + height / 2,
@@ -153,12 +165,54 @@ const renderCanvas = (
   ctx.shadowBlur = 0;
 };
 
-export default function Viewer(map: MapGeneratorProps) {
+const downloadImage = (
+  map: MapGeneratorProps,
+  mapBounds: BoundingBox,
+  mapData: MapData | null,
+): void => {
+  const canvas = document.getElementsByTagName(
+    "canvas",
+  )[0] as HTMLCanvasElement;
+
+  if (!canvas) return;
+
+  const originalCanvas = canvas;
+  if (!originalCanvas) return;
+
+  const scale = 4;
+
+  const exportCanvas = document.createElement("canvas");
+
+  const exportCanvasRef: RefObject<HTMLCanvasElement | null> = {
+    current: exportCanvas,
+  };
+
+  exportCanvas.style.width = `${originalCanvas.clientWidth}px`;
+  exportCanvas.style.height = `${originalCanvas.clientHeight}px`;
+
+  Object.assign(exportCanvas.style, {
+    position: "absolute",
+    visibility: "hidden",
+  });
+
+  document.body.appendChild(exportCanvas);
+
+  renderCanvas(exportCanvasRef, map, mapBounds, mapData, scale);
+
+  const link = document.createElement("a");
+  link.download = "map.png";
+  link.href = exportCanvas.toDataURL("image/png");
+  link.click();
+
+  exportCanvas.remove();
+};
+
+export default function Viewer({ onDownloadReady, ...map }: ViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mapCache = useRef(new Map<string, MapData>());
   const [mapData, setMapData] = useState<MapData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<unknown>(null);
+  const [error, setError] = useState<Error | unknown>(null);
 
   const mapBounds = boundingBox(map.routeData, map.zoom, map.lat, map.lon);
 
@@ -239,39 +293,59 @@ export default function Viewer(map: MapGeneratorProps) {
     map.backgroundColor,
   ]);
 
+  useEffect(() => {
+    if (!mapData) return;
+    /*
+
+    const handleDownloadReady = useCallback((download: () => void) => {
+        setDownloadMap(() => download);
+      }, []);
+
+    */
+    // store a function
+    onDownloadReady?.(() => {
+      downloadImage(map, mapBounds, mapData);
+    });
+  }, [
+    onDownloadReady,
+    mapData,
+    map.routeData,
+    map.lat,
+    map.lon,
+    map.zoom,
+    map.lineColor,
+    map.buildingColor,
+    map.buildingOutlineColor,
+    map.roadColor,
+    map.backgroundColor,
+  ]);
+
   return (
     <>
-      <canvas ref={canvasRef} className="block h-full w-full"></canvas>
-      {isLoading && (
-        <div
-          className="absolute inset-0 grid place-items-center bg-black/70 text-white"
-          role="status"
-          aria-live="polite"
+      {/* <div className="flex justify-center p-5">
+        <button
+          onClick={() => downloadImage(map, mapBounds, mapData)}
+          className="flex w-1/2 items-center justify-center gap-2 rounded-xl border border-gray-700 bg-gray-900 px-5 py-3.5 text-sm font-bold text-white transition hover:border-gray-500 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[#e2764c] focus:ring-offset-2 focus:ring-offset-gray-950"
         >
-          <div className="flex items-center gap-3 rounded-lg bg-black/10 px-4 py-3 text-sm font-semibold shadow-lg">
-            <span
-              className="size-5 animate-spin rounded-full border-2 border-white/30 border-t-white"
-              aria-hidden="true"
-            />
-            Loading map data...
-          </div>
+          Download Map
+        </button>
+      </div> */}
+
+      <canvas ref={canvasRef} className="block h-full w-full" />
+
+      {isLoading && (
+        <div className="absolute inset-0 grid place-items-center bg-black/70 text-white">
+          Loading map data...
         </div>
       )}
-      {error && (
+
+      {error instanceof Error && (
         <div
           className="absolute inset-0 grid place-items-center bg-black/70 text-white"
           role="alert"
           aria-live="assertive"
         >
-          <div className="flex items-center gap-3 rounded-lg bg-black/10 px-4 py-3 text-sm font-semibold shadow-lg">
-            <span
-              className="size-5 animate-spin rounded-full border-2 border-white/30 border-t-white"
-              aria-hidden="true"
-            />
-            {error instanceof Error
-              ? error.message
-              : "An unknown error occurred"}
-          </div>
+          {error.message}
         </div>
       )}
     </>
